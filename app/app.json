@@ -1,3 +1,11 @@
-{ "expo": { "name": "AI Task Manager", "slug": "ai-task-manager", "version": "1.0.0",
-  "android": { "package": "com.yourname.aitaskmanager" },
-  "plugins": ["expo-notifications"] } }
+{
+    "expo": {
+        "name": "AI Task Manager",
+        "slug": "ai-task-manager",
+        "version": "1.0.0",
+        "android": {
+            "package": "com.skarshad1928.aitaskmanager"
+        },
+        "plugins": ["expo-notifications"]
+    }
+}
