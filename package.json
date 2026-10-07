@@ -3,9 +3,12 @@
   "version": "1.0.0",
   "private": true,
   "workspaces": [
-    "backend"
+    "backend",
+    "web"
   ],
   "scripts": {
-    "start": "node backend/server.js"
+    "start": "npm run start --workspace backend",
+    "dev": "npm run dev --workspace web",
+    "build": "npm run build --workspace web"
   }
 }

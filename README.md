@@ -1,62 +1,58 @@
 # AI Task Manager
 
-## Backend setup
+AI Task Manager is a responsive React web app backed by a Node.js/Express API and MongoDB. The web app is in `web/`; API routes and data models are in `backend/`.
+
+## Run locally
+
+Install dependencies from the repository root:
 
 ```powershell
-cd backend
 npm install
-Copy-Item .env.example .env
+Copy-Item backend/.env.example backend/.env
+Copy-Item web/.env.example web/.env
+```
+
+Set `MONGO_URI` and `GEMINI_API_KEY` in `backend/.env`. Set `VITE_API_URL=http://localhost:5000` in `web/.env`, then run the API and web app in separate terminals:
+
+```powershell
 npm start
 ```
 
-Set `MONGO_URI` and `GEMINI_API_KEY` in `backend/.env`. Keep these backend secrets out of the app and Git. For Render, use the included root `render.yaml` blueprint and add both values as Render environment variables. Configure MongoDB Atlas Network Access to allow your deployment host.
+```powershell
+npm run dev
+```
 
-## App setup
+Open the Vite URL shown in the terminal. To build the React app, run `npm run build`; the static files are written to `web/dist`.
+
+## Deploy
+
+The Render blueprint in `render.yaml` builds the React app and starts the Node.js server, which serves both the API and the built web app. Add `MONGO_URI` and `GEMINI_API_KEY` to the Render service environment. If serving the frontend from a separate domain, set `VITE_API_URL` to the API URL when building.
+
+The GitHub Actions workflow also publishes the React static site to GitHub Pages when changes are pushed to `main`. Enable **Settings > Pages > Build and deployment > GitHub Actions** in the repository. The workflow points the web app at the Render API.
+
+## Features
+
+- Daily tasks and water routines, with browser notifications while the app is open.
+- Focus timer with task-level time tracking.
+- Bedtime and wake-time logging.
+- BMI calculation and blood-report PDF upload for Gemini-generated food guidance.
+- Daily wellness score and Gemini summary.
+- Seven-day Chrome and YouTube usage history synced from Android.
+
+Device-wide Chrome and YouTube usage collection requires Android usage access and is not available to web browsers. The web app displays the usage records synced to the API. The Android tracker source remains in `app/`.
+
+## Backend environment
+
+See `backend/.env.example`. Keep backend secrets out of the frontend and Git. MongoDB Atlas must allow connections from the deployment host.
+
+## Android usage collector
+
+Usage tracking requires an Android development build; Expo Go and iOS do not support the custom module. Configure `EXPO_PUBLIC_API_URL` in `app/.env`, then build with:
 
 ```powershell
 cd app
 npm install
-Copy-Item .env.example .env
-npx expo start
-```
-
-Set `EXPO_PUBLIC_API_URL` in `app/.env` to the backend URL. Expo Go can run the other app screens, but it does not include the custom Android usage module.
-
-## Deploy the web app to GitHub Pages
-
-The web build is published automatically by GitHub Actions after changes reach `main`. Merge the feature branch into `main`, then in the GitHub repository open **Settings > Pages** and set **Build and deployment > Source** to **GitHub Actions**. The published app will be at `https://skarshad1928.github.io/AI_Task_Manager/` and calls the Render API. The Usage tab shows an Android-only message on the web; Android app-usage tracking still requires the development APK below.
-
-To build the web app locally:
-
-```powershell
-cd app
-npm ci
-npx expo export --platform web
-```
-
-The static site is written to `app/dist`.
-
-## Android Usage Access development build
-
-App usage tracking requires Android and the custom development build. It does not work in Expo Go or on iOS.
-
-```powershell
-cd app
 eas build --profile development --platform android
 ```
 
-Install the generated APK. Open the app's **Usage** tab and choose **Open Usage access settings**. In Android Settings, select **AI Task Manager** and enable **Permit usage access**, then return to the app and refresh.
-
-The app reads only daily open counts and foreground minutes for Google Chrome (`com.android.chrome`) and YouTube (`com.google.android.youtube`). It does not collect URLs, browsing history, or video titles. Once access is granted, it syncs today's totals to `POST /usage` on app open and rechecks at least daily while the app remains open; `GET /usage?days=7` supplies the history.
-
-## Daily score
-
-The score is out of 100: water 15, study tasks 25, sleep 20, focus timer 10, routine 10, and digital habits 10. Chrome or YouTube usage above 120 minutes each removes 5 digital-habits points. Completing all water goals adds a 10-point bonus. The Gemini summary receives the day's usage totals when available.
-
-## Existing features
-
-- Two daily 1-liter water reminders at 10:00 and 17:00.
-- Study and urgent tasks with a focus timer.
-- Bedtime and wake-time logging.
-- BMI calculation and blood-report PDF upload for Gemini-generated food guidance.
-- MongoDB storage and Gemini daily summaries.
+Grant **Usage access** to AI Task Manager in Android Settings. It reads daily open counts and foreground minutes only for Chrome and YouTube; it does not collect URLs, browsing history, or video titles.

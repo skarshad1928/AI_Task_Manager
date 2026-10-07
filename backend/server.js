@@ -1,4 +1,5 @@
-require("dotenv").config();
+const path = require("path");
+require("dotenv").config({ path: path.join(__dirname, ".env") });
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
@@ -13,7 +14,14 @@ app.use("/profile", require("./routes/profile"));
 app.use("/report", require("./routes/report"));
 app.use("/score", require("./routes/score"));
 app.use("/usage", require("./routes/usage"));
-app.get("/", (req, res) => res.send("Task manager API running"));
+app.get("/health", (req, res) => res.json({ ok: true }));
+
+const webBuild = path.resolve(__dirname, "../web/dist");
+app.use(express.static(webBuild));
+app.get("/", (req, res) => {
+  if (require("fs").existsSync(path.join(webBuild, "index.html"))) return res.sendFile(path.join(webBuild, "index.html"));
+  res.send("Task manager API running");
+});
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
