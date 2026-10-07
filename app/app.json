@@ -6,6 +6,6 @@
         "android": {
             "package": "com.skarshad1928.aitaskmanager"
         },
-        "plugins": ["expo-notifications"]
+        "plugins": ["expo-notifications", "./plugins/withUsageAccess"]
     }
 }

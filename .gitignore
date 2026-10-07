@@ -1,6 +1,7 @@
 node_modules/
 .expo/
 dist/
+*.apk
 web-build/
 .env
 .env.*
@@ -9,3 +10,5 @@ web-build/
 **/.env.*
 !**/.env.example
 backend/uploads/
+android/
+ios/
