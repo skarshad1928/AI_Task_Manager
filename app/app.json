@@ -3,8 +3,16 @@
         "name": "AI Task Manager",
         "slug": "ai-task-manager",
         "version": "1.0.0",
+        "platforms": ["android", "ios", "web"],
         "android": {
             "package": "com.skarshad1928.aitaskmanager"
+        },
+        "web": {
+            "bundler": "metro",
+            "output": "single"
+        },
+        "experiments": {
+            "baseUrl": "/AI_Task_Manager"
         },
         "plugins": ["expo-notifications", "./plugins/withUsageAccess"]
     }

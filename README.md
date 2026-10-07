@@ -22,6 +22,20 @@ npx expo start
 
 Set `EXPO_PUBLIC_API_URL` in `app/.env` to the backend URL. Expo Go can run the other app screens, but it does not include the custom Android usage module.
 
+## Deploy the web app to GitHub Pages
+
+The web build is published automatically by GitHub Actions after changes reach `main`. Merge the feature branch into `main`, then in the GitHub repository open **Settings > Pages** and set **Build and deployment > Source** to **GitHub Actions**. The published app will be at `https://skarshad1928.github.io/AI_Task_Manager/` and calls the Render API. The Usage tab shows an Android-only message on the web; Android app-usage tracking still requires the development APK below.
+
+To build the web app locally:
+
+```powershell
+cd app
+npm ci
+npx expo export --platform web
+```
+
+The static site is written to `app/dist`.
+
 ## Android Usage Access development build
 
 App usage tracking requires Android and the custom development build. It does not work in Expo Go or on iOS.
