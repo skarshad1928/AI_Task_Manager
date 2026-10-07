@@ -1,58 +1,94 @@
 # AI Task Manager
 
-AI Task Manager is a responsive React web app backed by a Node.js/Express API and MongoDB. The web app is in `web/`; API routes and data models are in `backend/`.
+A mobile-first React app with a Node.js/Express API, MongoDB Atlas storage, and Gemini-powered report guidance and daily reflections.
 
-## Run locally
+## Local setup
 
-Install dependencies from the repository root:
+Use Node.js 20 or newer. Create `server/.env` from `server/.env.example` and `client/.env` from `client/.env.example`.
+
+### Server
 
 ```powershell
+cd server
 npm install
-Copy-Item backend/.env.example backend/.env
-Copy-Item web/.env.example web/.env
-```
-
-Set `MONGO_URI` and `GEMINI_API_KEY` in `backend/.env`. Set `VITE_API_URL=http://localhost:5000` in `web/.env`, then run the API and web app in separate terminals:
-
-```powershell
 npm start
 ```
 
+The API listens on port `5000` by default. The server needs `MONGO_URI`, `GEMINI_API_KEY`, and `CLIENT_URL` in `server/.env`.
+
+### Client
+
+In a second terminal:
+
 ```powershell
+cd client
+npm install
 npm run dev
 ```
 
-Open the Vite URL shown in the terminal. To build the React app, run `npm run build`; the static files are written to `web/dist`.
+Open the Vite URL, normally `http://localhost:5173`. Set `VITE_API_URL=http://localhost:5000/api` in `client/.env`. Build the production client with `npm run build`; the output is `client/dist`.
 
-## Deploy
+## Environment variables
 
-The Render blueprint in `render.yaml` builds the React app and starts the Node.js server, which serves both the API and the built web app. Add `MONGO_URI` and `GEMINI_API_KEY` to the Render service environment. If serving the frontend from a separate domain, set `VITE_API_URL` to the API URL when building.
+### `server/.env`
 
-The GitHub Actions workflow also publishes the React static site to GitHub Pages when changes are pushed to `main`. Enable **Settings > Pages > Build and deployment > GitHub Actions** in the repository. The workflow points the web app at the Render API.
+| Variable | Purpose |
+| --- | --- |
+| `MONGO_URI` | MongoDB Atlas connection string for this app's database |
+| `GEMINI_API_KEY` | Google AI Studio key for Gemini features |
+| `CLIENT_URL` | Exact browser client origin allowed by CORS, such as `http://localhost:5173` |
+| `PORT` | Optional server port; defaults to `5000` |
+
+### `client/.env`
+
+| Variable | Purpose |
+| --- | --- |
+| `VITE_API_URL` | Public base URL of the server API, ending in `/api` |
+
+The Gemini key and MongoDB URI are only read by the server. Do not add either secret to a `VITE_` variable.
 
 ## Features
 
-- Daily tasks and water routines, with browser notifications while the app is open.
-- Focus timer with task-level time tracking.
-- Bedtime and wake-time logging.
-- BMI calculation and blood-report PDF upload for Gemini-generated food guidance.
-- Daily wellness score and Gemini summary.
-- Seven-day Chrome and YouTube usage history synced from Android.
+- Two water routines are created for each date: 1 liter at 10:00 and 1 liter at 17:00.
+- Browser notifications can remind you at those times. Grant notification permission; reminders run while the app or installed PWA is open.
+- Add study, immediate, and personal routine tasks; complete or delete them; track focus time and save it when pausing.
+- Save sleep times, including sleep that crosses midnight.
+- Save height and weight and calculate BMI on the server.
+- Upload a blood report PDF up to 10 MB for Gemini to summarize abnormal values, Indian-friendly food ideas, iron and vitamin C pairings, and sleep tips.
+- Finish the day to save a 100-point score and a friendly Gemini summary in score history.
 
-Device-wide Chrome and YouTube usage collection requires Android usage access and is not available to web browsers. The web app displays the usage records synced to the API. The Android tracker source remains in `app/`.
+Score categories total exactly 100: water goals 20, personal routines 20, study and immediate tasks 30, sleep 20, and focus time 10. Water points come from the two water tasks. Routine points use only user-created personal routines, so water tasks are not counted in both categories. If no personal routines were planned, that category is not applicable and receives its full 20 points. Sleep awards 10 points for 7–9 hours and 10 for a bedtime from 18:00 through 23:59. Focus earns up to 10 points for one hour.
 
-## Backend environment
+The client has a web manifest and service worker and can be installed from a supported mobile browser's **Add to Home screen** or **Install app** option. The UI shell can load from cache, but task, health, sleep, report, and score data need an internet connection to reach the server.
 
-See `backend/.env.example`. Keep backend secrets out of the frontend and Git. MongoDB Atlas must allow connections from the deployment host.
+## API routes
 
-## Android usage collector
+- `GET /api/tasks?date=YYYY-MM-DD` and `POST /api/tasks`
+- `PUT /api/tasks/:id` and `DELETE /api/tasks/:id`
+- `POST /api/sleep` and `GET /api/sleep/:date`
+- `GET /api/profile` and `POST /api/profile`
+- `POST /api/report` with multipart field `pdf`
+- `POST /api/score/:date` and `GET /api/score`
+- `GET /api/health`
 
-Usage tracking requires an Android development build; Expo Go and iOS do not support the custom module. Configure `EXPO_PUBLIC_API_URL` in `app/.env`, then build with:
+## Deploy
 
-```powershell
-cd app
-npm install
-eas build --profile development --platform android
-```
+### Server on Render
 
-Grant **Usage access** to AI Task Manager in Android Settings. It reads daily open counts and foreground minutes only for Chrome and YouTube; it does not collect URLs, browsing history, or video titles.
+Create a Render Web Service from this repository and set its **Root Directory** to `server`. Use `npm install` as the build command and `npm start` as the start command. Add `MONGO_URI`, `GEMINI_API_KEY`, and `CLIENT_URL` as Render environment variables. Set `CLIENT_URL` to the deployed client origin, with no path or trailing slash.
+
+### Client on Vercel
+
+Import the repository as a Vercel project and set the **Root Directory** to `client`. Use `npm run build` and `dist` as the output directory. Add `VITE_API_URL=https://<your-render-service>.onrender.com/api` as a client build environment variable. `vercel.json` includes the single-page app rewrite.
+
+### Client on Netlify
+
+Create a Netlify site with the base directory `client`, build command `npm run build`, and publish directory `dist`. Set the same `VITE_API_URL` build variable. The included `_redirects` file routes browser paths back to the React app.
+
+### MongoDB Atlas network access
+
+In Atlas **Network Access**, allow the outbound IP address or CIDR used by the Render service to connect to the cluster. For local development, allow your current IP address. Avoid opening access to every address unless you intentionally accept that exposure.
+
+## Verify
+
+Run the API route checks with `cd server; npm test`. They start an HTTP server with isolated in-memory model doubles, so they do not require or change Atlas data. Run the production client build with `cd client; npm run build`.
