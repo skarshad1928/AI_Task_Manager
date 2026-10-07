@@ -91,6 +91,12 @@ test("API routes support the task, sleep, profile, blood report, and score workf
   t.after(() => new Promise((resolve) => server.close(resolve)));
   const base = `http://127.0.0.1:${server.address().port}/api`;
 
+  const apiIndexResponse = await fetch(base);
+  assert.equal(apiIndexResponse.status, 200);
+  const apiIndex = await json(apiIndexResponse);
+  assert.equal(apiIndex.ok, true);
+  assert.match(apiIndex.endpoints.tasks, /GET\/POST \/api\/tasks/);
+
   const healthResponse = await fetch(`${base}/health`);
   assert.equal(healthResponse.status, 200);
   assert.deepEqual(await json(healthResponse), { ok: true });

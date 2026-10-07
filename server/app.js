@@ -21,6 +21,19 @@ function createApp(dependencies = {}) {
   }));
   app.use(express.json({ limit: "1mb" }));
 
+  // Make the configured API base URL useful when opened directly in a browser.
+  app.get("/api", (req, res) => res.json({
+    ok: true,
+    service: "AI Task Manager API",
+    endpoints: {
+      health: "GET /api/health",
+      tasks: "GET/POST /api/tasks; PUT/DELETE /api/tasks/:id",
+      sleep: "POST /api/sleep; GET /api/sleep/:date",
+      profile: "GET/POST /api/profile",
+      report: "POST /api/report (multipart field: pdf)",
+      score: "GET /api/score; POST /api/score/:date",
+    },
+  }));
   app.get("/api/health", (req, res) => res.json({ ok: true }));
   app.use("/api/tasks", tasksRouter(selectedModels.Task));
   app.use("/api/sleep", sleepRouter(selectedModels.SleepLog));
