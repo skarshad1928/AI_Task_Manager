@@ -18,5 +18,7 @@ Keep it short, with bullet points. End with: "General guidance only - please con
 
 exports.daySummary = (data) => ask([
   { text: `Write a short, friendly 3-4 sentence summary of my day and one tip for tomorrow.
-Score: ${data.score}/100. Breakdown: ${JSON.stringify(data.breakdown)}.` },
+Score: ${data.score}/100. Breakdown: ${JSON.stringify(data.breakdown)}.
+Screen usage today: ${data.usage ? `Chrome opened ${data.usage.chromeOpens} times for ${data.usage.chromeMinutes} minutes; YouTube opened ${data.usage.youtubeOpens} times for ${data.usage.youtubeMinutes} minutes.` : "No Android app usage data was synced today."}
+Comment briefly on screen time without judging the user.` },
 ]);
