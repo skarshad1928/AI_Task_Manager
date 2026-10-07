@@ -12,6 +12,7 @@ app.use("/sleep", require("./routes/sleep"));
 app.use("/profile", require("./routes/profile"));
 app.use("/report", require("./routes/report"));
 app.use("/score", require("./routes/score"));
+app.use("/usage", require("./routes/usage"));
 app.get("/", (req, res) => res.send("Task manager API running"));
 
 mongoose.connect(process.env.MONGO_URI)
