@@ -1,14 +1,9 @@
 node_modules/
-.expo/
 dist/
-*.apk
-web-build/
+.vite/
 .env
 .env.*
 !.env.example
 **/.env
 **/.env.*
 !**/.env.example
-backend/uploads/
-android/
-ios/
