@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { SafeAreaView, View, Text, TouchableOpacity, StyleSheet, StatusBar } from "react-native";
+import { AppState, SafeAreaView, View, Text, TouchableOpacity, StyleSheet, StatusBar } from "react-native";
 import { setupWaterReminders } from "./services/notifications";
+import { syncUsageIfDue } from "./services/usageTracking";
 import HomeScreen from "./screens/HomeScreen";
 import TimerScreen from "./screens/TimerScreen";
 import SleepScreen from "./screens/SleepScreen";
 import HealthScreen from "./screens/HealthScreen";
 import ScoreScreen from "./screens/ScoreScreen";
+import UsageScreen from "./screens/UsageScreen";
 
 const TABS = [
   { key: "Home", label: "Tasks", C: HomeScreen },
@@ -13,11 +15,25 @@ const TABS = [
   { key: "Sleep", label: "Sleep", C: SleepScreen },
   { key: "Health", label: "Health", C: HealthScreen },
   { key: "Score", label: "Score", C: ScoreScreen },
+  { key: "Usage", label: "Usage", C: UsageScreen },
 ];
 
 export default function App() {
   const [tab, setTab] = useState("Home");
-  useEffect(() => { setupWaterReminders(); }, []);
+  useEffect(() => {
+    setupWaterReminders().catch((error) => console.warn("Could not set water reminders", error));
+    syncUsageIfDue(true);
+
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") syncUsageIfDue();
+    });
+    const dailySync = setInterval(() => syncUsageIfDue(), 60 * 60 * 1000);
+
+    return () => {
+      subscription.remove();
+      clearInterval(dailySync);
+    };
+  }, []);
   const Active = TABS.find((t) => t.key === tab).C;
 
   return (

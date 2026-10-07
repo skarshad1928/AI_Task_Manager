@@ -1,6 +1,12 @@
 import { API_URL } from "../config";
 
-export const today = () => new Date().toISOString().slice(0, 10);
+export const today = () => {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
 
 const call = async (path, method = "GET", body) => {
   const res = await fetch(API_URL + path, {
@@ -19,6 +25,8 @@ export const saveSleep = (bedtime, wakeTime) => call("/sleep", "POST", { date: t
 export const getProfile = () => call("/profile");
 export const saveProfile = (heightCm, weightKg) => call("/profile", "POST", { heightCm, weightKg });
 export const getScore = () => call(`/score/${today()}`, "POST");
+export const saveUsage = (usage) => call("/usage", "POST", usage);
+export const getUsage = (days = 7) => call(`/usage?days=${days}`);
 
 export const uploadReport = async (file) => {
   const form = new FormData();
