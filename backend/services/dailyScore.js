@@ -20,7 +20,7 @@ function calculateDailyScore(tasks, sleep, usage) {
     sleep: sleepScore,
     focus: Math.min(10, Math.round((focusMinutes / 60) * 10)),
     routine: Math.round(ratio(water) * 10),
-    habits: usage
+    digitalHabits: usage
       ? Math.max(0, 10 - (usage.youtubeMinutes > 120 ? 5 : 0) - (usage.chromeMinutes > 120 ? 5 : 0))
       : 0,
     waterBonus: water.length > 0 && water.every((task) => task.done) ? 10 : 0,

@@ -20,7 +20,7 @@ test("all goals with usage below the limits total 100 points", () => {
     sleep: 20,
     focus: 10,
     routine: 10,
-    habits: 10,
+    digitalHabits: 10,
     waterBonus: 10,
   });
 });
@@ -28,11 +28,11 @@ test("all goals with usage below the limits total 100 points", () => {
 test("each app over 120 minutes removes five digital-habits points", () => {
   const result = calculateDailyScore([], null, { chromeMinutes: 121, youtubeMinutes: 121 });
 
-  assert.equal(result.breakdown.habits, 0);
+  assert.equal(result.breakdown.digitalHabits, 0);
 });
 
 test("missing usage data does not award digital-habits points", () => {
   const result = calculateDailyScore([], null, null);
 
-  assert.equal(result.breakdown.habits, 0);
+  assert.equal(result.breakdown.digitalHabits, 0);
 });
