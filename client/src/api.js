@@ -1,4 +1,5 @@
-const API_URL = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
+const configuredApiUrl = (import.meta.env.VITE_API_URL || "").trim();
+const API_URL = (configuredApiUrl || (import.meta.env.DEV ? "http://localhost:5000/api" : "")).replace(/\/+$/, "");
 
 export function localDate() {
   const date = new Date();
@@ -7,7 +8,12 @@ export function localDate() {
 
 async function request(path, options = {}) {
   if (!API_URL) throw new Error("Set VITE_API_URL in client/.env to connect to the server.");
-  const response = await fetch(`${API_URL}${path}`, options);
+  let response;
+  try {
+    response = await fetch(`${API_URL}${path}`, options);
+  } catch (error) {
+    throw new Error(`Cannot reach the API at ${API_URL}. Start the server or check VITE_API_URL.`, { cause: error });
+  }
   const contentType = response.headers.get("content-type") || "";
   const data = contentType.includes("application/json") ? await response.json() : null;
   if (!response.ok) throw new Error(data?.error || `Server request failed (${response.status})`);
@@ -31,8 +37,8 @@ export const saveProfile = (data) => request("/profile", json("POST", data));
 export const getScoreHistory = () => request("/score");
 export const finishDay = (date = localDate()) => request(`/score/${encodeURIComponent(date)}`, { method: "POST" });
 
-export function uploadBloodReport(file) {
+export function uploadBloodReportCsv(file) {
   const form = new FormData();
-  form.append("pdf", file, file.name);
+  form.append("csv", file, file.name);
   return request("/report", { method: "POST", body: form });
 }

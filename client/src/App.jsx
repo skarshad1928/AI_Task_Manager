@@ -7,6 +7,14 @@ import Sleep from "./pages/Sleep.jsx";
 import Health from "./pages/Health.jsx";
 import Scores from "./pages/Scores.jsx";
 
+const REMINDER_SCHEDULE = [
+  { id: "water-10", type: "water", hour: 10, minute: 0, title: "Water reminder", body: "Drink 1 liter of water now." },
+  { id: "breakfast", type: "meal", hour: 8, minute: 30, title: "Breakfast reminder", body: "It’s time for breakfast." },
+  { id: "lunch", type: "meal", hour: 12, minute: 40, title: "Lunch reminder", body: "It’s time for lunch." },
+  { id: "dinner", type: "meal", hour: 19, minute: 45, title: "Dinner reminder", body: "It’s time for dinner." },
+  { id: "water-17", type: "water", hour: 17, minute: 0, title: "Water reminder", body: "Drink 1 liter of water now." },
+];
+
 const NAVIGATION = [
   { to: "/", label: "Today", icon: "⌂", end: true },
   { to: "/tasks", label: "Tasks & focus", icon: "✓" },
@@ -48,13 +56,21 @@ function Layout() {
 
   useEffect(() => {
     const notifyIfDue = () => {
-      if (localStorage.getItem("daylight-water-reminders") !== "on" || !("Notification" in window) || Notification.permission !== "granted") return;
+      if (!("Notification" in window) || Notification.permission !== "granted") return;
+      const waterEnabled = localStorage.getItem("daylight-water-reminders") === "on";
+      const mealsEnabled = localStorage.getItem("daylight-meal-reminders") === "on";
+      if (!waterEnabled && !mealsEnabled) return;
       const now = new Date();
-      if (![10, 17].includes(now.getHours()) || now.getMinutes() !== 0) return;
-      const key = `daylight-water-${localDate()}-${now.getHours()}`;
-      if (localStorage.getItem(key) === "sent") return;
-      new Notification("Water reminder", { body: "Drink 1 liter of water now." });
-      localStorage.setItem(key, "sent");
+      for (const reminder of REMINDER_SCHEDULE) {
+        const enabled = reminder.type === "water" ? waterEnabled : mealsEnabled;
+        if (!enabled || now.getHours() !== reminder.hour || now.getMinutes() !== reminder.minute) continue;
+        const key = reminder.type === "water"
+          ? `daylight-water-${localDate()}-${reminder.hour}`
+          : `daylight-${reminder.id}-${localDate()}`;
+        if (localStorage.getItem(key) === "sent") continue;
+        new Notification(reminder.title, { body: reminder.body });
+        localStorage.setItem(key, "sent");
+      }
     };
     notifyIfDue();
     const timer = window.setInterval(notifyIfDue, 30_000);

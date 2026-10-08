@@ -8,7 +8,10 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [reminderMessage, setReminderMessage] = useState("");
-  const [remindersOn, setRemindersOn] = useState(() => localStorage.getItem("daylight-water-reminders") === "on");
+  const [remindersOn, setRemindersOn] = useState(() => (
+    localStorage.getItem("daylight-water-reminders") === "on"
+    && localStorage.getItem("daylight-meal-reminders") === "on"
+  ));
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -31,10 +34,11 @@ export default function Dashboard() {
   const enableReminders = async () => {
     if (!("Notification" in window)) { setReminderMessage("This browser does not support notifications."); return; }
     const permission = Notification.permission === "granted" ? "granted" : await Notification.requestPermission();
-    if (permission !== "granted") { setReminderMessage("Allow notifications in your browser to turn on water reminders."); return; }
+    if (permission !== "granted") { setReminderMessage("Allow notifications in your browser to turn on water and meal reminders."); return; }
     localStorage.setItem("daylight-water-reminders", "on");
+    localStorage.setItem("daylight-meal-reminders", "on");
     setRemindersOn(true);
-    setReminderMessage("Reminders are on while the app or PWA is open.");
+    setReminderMessage("Water and meal reminders are on while the app or PWA is open.");
   };
 
   const dateLabel = new Intl.DateTimeFormat(undefined, { weekday: "long", month: "long", day: "numeric" }).format(new Date());
@@ -42,10 +46,10 @@ export default function Dashboard() {
   const plannedTasks = tasks.filter((task) => task.type !== "water");
 
   return <>
-    <PageTitle kicker="YOUR DAY, YOUR PACE" title="Make today count." subtitle={dateLabel} action={<button className="button button-soft" onClick={enableReminders}>{remindersOn ? "✓ Reminders on" : "♧ Enable water reminders"}</button>} />
+    <PageTitle kicker="YOUR DAY, YOUR PACE" title="Make today count." subtitle={dateLabel} action={<button className="button button-soft" onClick={enableReminders}>{remindersOn ? "✓ Reminders on" : "♧ Enable reminders"}</button>} />
     <Alert>{error}</Alert>
     <Alert type="success">{reminderMessage}</Alert>
-    <div className="reminder-note"><span>ⓘ</span><p>Water reminders are browser notifications at 10:00 and 17:00. They work while this app or PWA is open.</p></div>
+    <div className="reminder-note"><span>ⓘ</span><p>Meal reminders: breakfast at 8:30 AM, lunch at 12:40 PM, and dinner at 7:45 PM. Water reminders are at 10:00 AM and 5:00 PM. Notifications work while this app or PWA is open.</p></div>
 
     <section className="hero-card">
       <div className="hero-content"><div className="hero-kicker">A FRESH START, EVERY DAY <span>✦</span></div><h2>Small steps add up.</h2><p>You’ve completed <strong>{completed} of {tasks.length}</strong> tasks today. Keep your momentum going.</p><Link to="/tasks" className="hero-link">See your tasks <span>→</span></Link></div>

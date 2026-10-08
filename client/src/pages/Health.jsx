@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getProfile, saveProfile, uploadBloodReport } from "../api.js";
+import { getProfile, saveProfile, uploadBloodReportCsv } from "../api.js";
 import { Alert, Loading, PageTitle } from "../components/UI.jsx";
 
 export default function Health() {
@@ -35,12 +35,12 @@ export default function Health() {
     const file = event.target.files?.[0];
     if (!file) return;
     setError(""); setNotice("");
-    if (!file.name.toLowerCase().endsWith(".pdf") && file.type !== "application/pdf") {
-      setError("Please choose a PDF file."); event.target.value = ""; return;
+    if (!file.name.toLowerCase().endsWith(".csv")) {
+      setError("Please choose a CSV file."); event.target.value = ""; return;
     }
-    if (file.size > 10 * 1024 * 1024) { setError("PDFs must be 10 MB or smaller."); event.target.value = ""; return; }
+    if (file.size > 1024 * 1024) { setError("CSV files must be 1 MB or smaller."); event.target.value = ""; return; }
     setUploading(true);
-    try { const response = await uploadBloodReport(file); setAdvice(response.advice); setNotice("Your report guidance is ready."); }
+    try { const response = await uploadBloodReportCsv(file); setAdvice(response.advice); setNotice("Your report guidance is ready."); }
     catch (requestError) { setError(requestError.message); }
     finally { setUploading(false); event.target.value = ""; }
   };
@@ -60,8 +60,8 @@ export default function Health() {
       </section>
 
       <section className="card report-card">
-        <div className="report-icon">✧</div><div className="kicker">AI-POWERED INSIGHTS</div><h2>Understand your report</h2><p className="card-copy">Upload a blood report PDF for food suggestions and practical sleep tips.</p>
-        <label className={`upload-zone ${uploading ? "busy" : ""}`}><input type="file" accept="application/pdf,.pdf" onChange={upload} disabled={uploading} /><span className="upload-arrow">↑</span><strong>{uploading ? "Reviewing your report…" : "Choose a PDF to upload"}</strong><small>PDF only · up to 10 MB</small></label>
+        <div className="report-icon">✧</div><div className="kicker">AI-POWERED INSIGHTS</div><h2>Understand your report</h2><p className="card-copy">Upload a blood report CSV for food suggestions and practical sleep tips.</p>
+        <label className={`upload-zone ${uploading ? "busy" : ""}`}><input type="file" accept=".csv,text/csv" onChange={upload} disabled={uploading} /><span className="upload-arrow">↑</span><strong>{uploading ? "Reviewing your report…" : "Choose a CSV to upload"}</strong><small>CSV only · up to 1 MB</small></label>
         {advice && <div className="advice-box"><div className="advice-heading">✦ &nbsp;YOUR GUIDANCE</div><p>{advice}</p></div>}
         <div className="medical-note">ⓘ &nbsp;AI suggestions are general guidance, not medical advice.</div>
       </section>

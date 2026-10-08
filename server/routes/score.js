@@ -20,7 +20,12 @@ function createScoreRouter({ Task, SleepLog, DailyScore }, daySummary) {
       SleepLog.findOne({ date }).lean(),
     ]);
     const { score, breakdown } = calculateDailyScore(tasks, sleep);
-    const summary = await daySummary({ date, score, breakdown });
+    let summary;
+    try {
+      summary = await daySummary({ date, score, breakdown });
+    } catch {
+      summary = "Your score is saved. Gemini could not create a reflection this time, but every small step counts. Notice one thing you did well today, and choose one small step for tomorrow.";
+    }
     const saved = await DailyScore.findOneAndUpdate(
       { date }, { $set: { date, score, breakdown, summary } },
       { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true },

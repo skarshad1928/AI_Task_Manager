@@ -5,6 +5,7 @@ const sleepLogSchema = new mongoose.Schema({
   bedtime: { type: String, required: true },
   wakeTime: { type: String, required: true },
   hours: { type: Number, required: true, min: 0, max: 24 },
+  wakeups: { type: Number, required: true, min: 0, max: 100, default: 0 },
 }, { timestamps: true });
 
 module.exports = mongoose.model("SleepLog", sleepLogSchema);

@@ -79,10 +79,11 @@ async function json(response) {
 test("API routes support the task, sleep, profile, blood report, and score workflows", async (t) => {
   const { models, data } = makeModels();
   let reportContext;
+  let uploadedCsv;
   const app = createApp({
     models,
     services: {
-      foodAdvice: async (_buffer, context) => { reportContext = context; return "Add lentils with lemon and keep a steady bedtime.\n\nGeneral guidance only - please consult a doctor."; },
+      foodAdvice: async (csvText, context) => { uploadedCsv = csvText; reportContext = context; return "Add lentils with lemon and keep a steady bedtime.\n\nGeneral guidance only - please consult a doctor."; },
       daySummary: async ({ date, score }) => `A thoughtful day on ${date}. You scored ${score}. Try one small step tomorrow.`,
     },
   });
@@ -127,12 +128,22 @@ test("API routes support the task, sleep, profile, blood report, and score workf
 
   const sleepResponse = await fetch(`${base}/sleep`, {
     method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ date: DAY, bedtime: "23:30", wakeTime: "06:30" }),
+    body: JSON.stringify({ date: DAY, bedtime: "23:30", wakeTime: "06:30", wakeups: 2 }),
   });
   assert.equal(sleepResponse.status, 200);
-  assert.equal((await json(sleepResponse)).hours, 7);
+  const savedSleepLog = await json(sleepResponse);
+  assert.equal(savedSleepLog.hours, 7);
+  assert.equal(savedSleepLog.wakeups, 2);
   const readSleepResponse = await fetch(`${base}/sleep/${DAY}`);
-  assert.equal((await json(readSleepResponse)).wakeTime, "06:30");
+  const savedSleep = await json(readSleepResponse);
+  assert.equal(savedSleep.wakeTime, "06:30");
+  assert.equal(savedSleep.wakeups, 2);
+
+  const invalidSleepResponse = await fetch(`${base}/sleep`, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ date: DAY, bedtime: "23:30", wakeTime: "06:30", wakeups: 1.5 }),
+  });
+  assert.equal(invalidSleepResponse.status, 400);
 
   const readProfileResponse = await fetch(`${base}/profile`);
   assert.equal(await json(readProfileResponse), null);
@@ -145,12 +156,19 @@ test("API routes support the task, sleep, profile, blood report, and score workf
   assert.equal(profile.bmiCategory, "Normal");
 
   const form = new FormData();
-  form.append("pdf", new Blob(["%PDF-1.4 sample"], { type: "application/pdf" }), "blood-report.pdf");
+  form.append("csv", new Blob(["test,value\nHemoglobin,11.2\n"], { type: "text/csv" }), "blood-report.csv");
   const reportResponse = await fetch(`${base}/report`, { method: "POST", body: form });
   assert.equal(reportResponse.status, 200);
   assert.match((await json(reportResponse)).advice, /consult a doctor\.$/);
+  assert.match(uploadedCsv, /Hemoglobin,11\.2/);
   assert.deepEqual(reportContext, { bmi: 22.5, bmiCategory: "Normal", averageSleep: 7 });
   assert.match(data.profile.lastAdvice, /consult a doctor\.$/);
+
+  const pdfForm = new FormData();
+  pdfForm.append("csv", new Blob(["%PDF-1.4 sample"], { type: "application/pdf" }), "blood-report.pdf");
+  const pdfResponse = await fetch(`${base}/report`, { method: "POST", body: pdfForm });
+  assert.equal(pdfResponse.status, 400);
+  assert.equal((await json(pdfResponse)).error, "upload a CSV file");
 
   const finishResponse = await fetch(`${base}/score/${DAY}`, { method: "POST" });
   assert.equal(finishResponse.status, 200);
@@ -190,4 +208,27 @@ test("daily score totals 100 and water is not counted as a personal routine", ()
   const completeWater = calculateDailyScore([{ type: "water", done: true }], null);
   assert.equal(noWater.breakdown.routine, completeWater.breakdown.routine);
   assert.equal(completeWater.breakdown.water - noWater.breakdown.water, 10);
+});
+
+test("Finish my day saves the score when Gemini is unavailable", async (t) => {
+  const { models } = makeModels();
+  const app = createApp({
+    models,
+    services: { daySummary: async () => { throw new Error("Gemini is unavailable"); } },
+  });
+  const server = app.listen(0, "127.0.0.1");
+  await once(server, "listening");
+  t.after(() => new Promise((resolve) => server.close(resolve)));
+  const base = `http://127.0.0.1:${server.address().port}/api`;
+
+  const finishResponse = await fetch(`${base}/score/${DAY}`, { method: "POST" });
+  assert.equal(finishResponse.status, 200);
+  const savedScore = await json(finishResponse);
+  assert.equal(savedScore.date, DAY);
+  assert.match(savedScore.summary, /Gemini could not create a reflection/);
+
+  const historyResponse = await fetch(`${base}/score`);
+  const history = await json(historyResponse);
+  assert.equal(history.length, 1);
+  assert.equal(history[0].date, DAY);
 });

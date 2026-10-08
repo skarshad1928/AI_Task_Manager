@@ -30,7 +30,7 @@ function createApp(dependencies = {}) {
       tasks: "GET/POST /api/tasks; PUT/DELETE /api/tasks/:id",
       sleep: "POST /api/sleep; GET /api/sleep/:date",
       profile: "GET/POST /api/profile",
-      report: "POST /api/report (multipart field: pdf)",
+      report: "POST /api/report (multipart field: csv)",
       score: "GET /api/score; POST /api/score/:date",
     },
   }));
@@ -48,9 +48,9 @@ function createApp(dependencies = {}) {
       : error.code === "LIMIT_FILE_SIZE" ? 413
         : error.code === "LIMIT_UNEXPECTED_FILE" ? 400
           : 500;
-    const message = status === 413 ? "PDFs must be 10 MB or smaller"
+    const message = status === 413 ? "CSV files must be 1 MB or smaller"
       : error.status ? error.message
-        : status === 400 ? "Only one PDF can be uploaded using the field 'pdf'"
+        : error.code === "LIMIT_UNEXPECTED_FILE" ? "Only one CSV can be uploaded using the field 'csv'"
           : error.publicMessage || "The server could not complete this request";
     res.status(status).json({ error: message });
   });

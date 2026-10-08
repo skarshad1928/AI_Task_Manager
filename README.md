@@ -4,7 +4,7 @@ A mobile-first React app with a Node.js/Express API, MongoDB Atlas storage, and 
 
 ## Local setup
 
-Use Node.js 20 or newer. Create `server/.env` from `server/.env.example` and `client/.env` from `client/.env.example`.
+Use Node.js 20 or newer. Create `server/.env` from `server/.env.example`. During local development, the client defaults to `http://localhost:5000/api`; create `client/.env` from `client/.env.example` only if your API runs at another address.
 
 ### Server
 
@@ -26,7 +26,7 @@ npm install
 npm run dev
 ```
 
-Open the Vite URL, normally `http://localhost:5173`. Set `VITE_API_URL=http://localhost:5000/api` in `client/.env`. Build the production client with `npm run build`; the output is `client/dist`.
+Open the Vite URL, normally `http://localhost:5173`. The client uses the local API default above. Build the production client with `npm run build`; the output is `client/dist`.
 
 ## Environment variables
 
@@ -43,18 +43,18 @@ Open the Vite URL, normally `http://localhost:5173`. Set `VITE_API_URL=http://lo
 
 | Variable | Purpose |
 | --- | --- |
-| `VITE_API_URL` | Public base URL of the server API, ending in `/api` |
+| `VITE_API_URL` | Public base URL of the server API, ending in `/api`. Defaults to `http://localhost:5000/api` in local development; set it for deployed builds. |
 
 The Gemini key and MongoDB URI are only read by the server. Do not add either secret to a `VITE_` variable.
 
 ## Features
 
 - Two water routines are created for each date: 1 liter at 10:00 and 1 liter at 17:00.
-- Browser notifications can remind you at those times. Grant notification permission; reminders run while the app or installed PWA is open.
+- Browser notifications can remind you about water at 10:00 AM and 5:00 PM and meals at 8:30 AM, 12:40 PM, and 7:45 PM. Grant notification permission; reminders run while the app or installed PWA is open.
 - Add study, immediate, and personal routine tasks; complete or delete them; track focus time and save it when pausing.
-- Save sleep times, including sleep that crosses midnight.
+- Capture sleep start and end times with buttons, count middle-of-night wake-ups, and save sleep that crosses midnight.
 - Save height and weight and calculate BMI on the server.
-- Upload a blood report PDF up to 10 MB for Gemini to summarize abnormal values, Indian-friendly food ideas, iron and vitamin C pairings, and sleep tips.
+- Upload a blood report CSV up to 1 MB for Gemini to summarize abnormal values, Indian-friendly food ideas, iron and vitamin C pairings, and sleep tips.
 - Finish the day to save a 100-point score and a friendly Gemini summary in score history.
 
 Score categories total exactly 100: water goals 20, personal routines 20, study and immediate tasks 30, sleep 20, and focus time 10. Water points come from the two water tasks. Routine points use only user-created personal routines, so water tasks are not counted in both categories. If no personal routines were planned, that category is not applicable and receives its full 20 points. Sleep awards 10 points for 7–9 hours and 10 for a bedtime from 18:00 through 23:59. Focus earns up to 10 points for one hour.
@@ -67,7 +67,7 @@ The client has a web manifest and service worker and can be installed from a sup
 - `PUT /api/tasks/:id` and `DELETE /api/tasks/:id`
 - `POST /api/sleep` and `GET /api/sleep/:date`
 - `GET /api/profile` and `POST /api/profile`
-- `POST /api/report` with multipart field `pdf`
+- `POST /api/report` with multipart field `csv`
 - `POST /api/score/:date` and `GET /api/score`
 - `GET /api/health`
 
