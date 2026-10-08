@@ -188,9 +188,32 @@ test("API routes support the task, sleep, profile, blood report, and score workf
   assert.equal(typeof (await json(invalidProfile)).error, "string");
 
   const badOrigin = await fetch(`${base}/health`, { headers: { Origin: "https://untrusted.example" } });
-  const allowedOrigin = process.env.CLIENT_URL || "http://localhost:5173";
-  assert.equal(badOrigin.headers.get("access-control-allow-origin"), allowedOrigin);
-  assert.notEqual(badOrigin.headers.get("access-control-allow-origin"), "https://untrusted.example");
+  assert.equal(badOrigin.headers.get("access-control-allow-origin"), null);
+
+  const allowedOrigin = (process.env.CLIENT_URL || "http://localhost:5173").split(",")[0].trim();
+  const allowedResponse = await fetch(`${base}/health`, { headers: { Origin: new URL(allowedOrigin).origin } });
+  assert.equal(allowedResponse.headers.get("access-control-allow-origin"), new URL(allowedOrigin).origin);
+});
+
+test("CORS allows deployments for the configured Vercel project", async (t) => {
+  const configuredOrigin = "https://ai-task-manager-4jf5ss1b3-skarshad1928s-projects.vercel.app";
+  const app = createApp({ clientUrl: configuredOrigin });
+  const server = app.listen(0, "127.0.0.1");
+  await once(server, "listening");
+  t.after(() => new Promise((resolve) => server.close(resolve)));
+  const healthUrl = `http://127.0.0.1:${server.address().port}/api/health`;
+
+  for (const origin of [
+    "https://ai-task-manager-q1w2e3r4t-skarshad1928s-projects.vercel.app",
+    "https://ai-task-manager-skarshad1928s-projects.vercel.app",
+  ]) {
+    const response = await fetch(healthUrl, { headers: { Origin: origin } });
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get("access-control-allow-origin"), origin);
+  }
+
+  const unrelated = await fetch(healthUrl, { headers: { Origin: "https://another-app-q1w2e3r4t-skarshad1928s-projects.vercel.app" } });
+  assert.equal(unrelated.headers.get("access-control-allow-origin"), null);
 });
 
 test("daily score totals 100 and water is not counted as a personal routine", () => {

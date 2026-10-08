@@ -8,14 +8,50 @@ const profileRouter = require("./routes/profile");
 const reportRouter = require("./routes/report");
 const scoreRouter = require("./routes/score");
 
+function getClientOrigins(value) {
+  return value.split(",").map((item) => {
+    try {
+      const url = new URL(item.trim());
+      return ["http:", "https:"].includes(url.protocol) ? url.origin : null;
+    } catch {
+      return null;
+    }
+  }).filter(Boolean);
+}
+
+function getVercelProjectPatterns(origins) {
+  return origins.flatMap((origin) => {
+    const hostname = new URL(origin).hostname;
+    const match = hostname.match(/^(?<project>.+)-[a-z0-9]{9}-(?<scope>[a-z0-9-]+)\.vercel\.app$/i);
+    if (!match) return [];
+
+    const escape = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return [new RegExp(`^${escape(match.groups.project)}(?:-[a-z0-9-]+)?-${escape(match.groups.scope)}\\.vercel\\.app$`, "i")];
+  });
+}
+
 function createApp(dependencies = {}) {
   const app = express();
   const selectedModels = { ...models, ...(dependencies.models || {}) };
   const selectedServices = { ...services, ...(dependencies.services || {}) };
-  const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+  const clientOrigins = new Set(getClientOrigins(dependencies.clientUrl || process.env.CLIENT_URL || "http://localhost:5173"));
+  const vercelProjectPatterns = getVercelProjectPatterns([...clientOrigins]);
 
   app.use(cors({
-    origin: clientUrl,
+    origin(origin, callback) {
+      if (!origin || clientOrigins.has(origin)) return callback(null, true);
+
+      let hostname;
+      try {
+        const url = new URL(origin);
+        if (url.protocol !== "https:") return callback(null, false);
+        hostname = url.hostname;
+      } catch {
+        return callback(null, false);
+      }
+
+      return callback(null, vercelProjectPatterns.some((pattern) => pattern.test(hostname)));
+    },
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type"],
   }));

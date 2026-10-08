@@ -36,7 +36,7 @@ Open the Vite URL, normally `http://localhost:5173`. The client uses the local A
 | --- | --- |
 | `MONGO_URI` | MongoDB Atlas connection string for this app's database |
 | `GEMINI_API_KEY` | Google AI Studio key for Gemini features |
-| `CLIENT_URL` | Exact browser client origin allowed by CORS, such as `http://localhost:5173` |
+| `CLIENT_URL` | Browser client origin(s) allowed by CORS, such as `http://localhost:5173`; separate multiple origins with commas. When set to a Vercel preview URL, matching preview and production URLs for that Vercel project are also allowed. |
 | `PORT` | Optional server port; defaults to `5000` |
 
 ### `client/.env`
@@ -75,7 +75,7 @@ The client has a web manifest and service worker and can be installed from a sup
 
 ### Server on Render
 
-Create a Render Web Service from this repository and set its **Root Directory** to `server`. Use `npm install` as the build command and `npm start` as the start command. Add `MONGO_URI`, `GEMINI_API_KEY`, and `CLIENT_URL` as Render environment variables. Set `CLIENT_URL` to the deployed client origin, with no path or trailing slash.
+Create a Render Web Service from this repository and set its **Root Directory** to `server`. Use `npm install` as the build command and `npm start` as the start command. Add `MONGO_URI`, `GEMINI_API_KEY`, and `CLIENT_URL` as Render environment variables. Set `CLIENT_URL` to the deployed client origin, with no path or trailing slash. Multiple exact origins can be separated with commas.
 
 ### Client on Vercel
 
