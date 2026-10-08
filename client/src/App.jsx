@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { BrowserRouter, NavLink, Outlet, Route, Routes, useLocation } from "react-router-dom";
-import { localDate } from "./api.js";
+import { checkBackendConnection, localDate } from "./api.js";
 import Dashboard from "./pages/Dashboard.jsx";
 import Tasks from "./pages/Tasks.jsx";
 import Sleep from "./pages/Sleep.jsx";
@@ -38,6 +38,7 @@ function Layout() {
   const location = useLocation();
   const [installEvent, setInstallEvent] = useState(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [backendCheck, setBackendCheck] = useState({ state: "idle", message: "" });
   const activePage = NAVIGATION.find((item) => item.end ? location.pathname === item.to : location.pathname.startsWith(item.to))?.label || "Today";
 
   useEffect(() => {
@@ -83,6 +84,18 @@ function Layout() {
     setInstallEvent(null);
   };
 
+  const checkBackend = async () => {
+    setBackendCheck({ state: "checking", message: "Checking backend, with a 30-second timeout." });
+    const result = await checkBackendConnection();
+    setBackendCheck({ state: result.ok ? "connected" : "unavailable", ...result });
+  };
+
+  const backendStatusLabel = backendCheck.state === "checking"
+    ? "Checking…"
+    : backendCheck.state === "connected"
+      ? `Connected · ${backendCheck.durationMs} ms`
+      : backendCheck.state === "unavailable" ? "Backend unavailable" : "";
+
   return <div className="app-layout">
     <aside className="sidebar">
       <NavLink to="/" className="brand"><span className="brand-icon">d</span><span>daylight<small>AI TASK MANAGER</small></span></NavLink>
@@ -101,6 +114,17 @@ function Layout() {
         <NavLink to="/" className="mobile-brand"><span className="brand-icon">d</span> daylight</NavLink>
         <div className="crumb">My day <span>/</span> <strong>{activePage}</strong></div>
         <div className="topbar-actions">
+          <div className="backend-check-group">
+            <button
+              type="button"
+              className="backend-check-button"
+              onClick={checkBackend}
+              disabled={backendCheck.state === "checking"}
+              title={backendCheck.message || "Check whether the backend responds. Times out after 30 seconds."}
+              aria-label="Check backend connection"
+            >{backendCheck.state === "checking" ? "Checking…" : "Check API"}</button>
+            {backendStatusLabel && <span className={`backend-check-result ${backendCheck.state}`} role="status" aria-live="polite" title={backendCheck.message}>{backendStatusLabel}</span>}
+          </div>
           <span className={`connection ${isOnline ? "connected" : "disconnected"}`}><i />{isOnline ? "Online" : "Offline"}</span>
           {installEvent && <button className="install-button" onClick={install}>＋ Install app</button>}
         </div>
